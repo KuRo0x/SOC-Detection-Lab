@@ -15,16 +15,16 @@ logsource:
 detection:
   selection_powershell:
     Image|endswith:
-      - '\powershell.exe'
-      - '\pwsh.exe'
+      - '\\powershell.exe'
+      - '\\pwsh.exe'
 
   selection_encoded:
     CommandLine|re: '(?i)\s(-encodedcommand|-enc|/encodedcommand|/enc)\s+[A-Za-z0-9+/=]{20,}'
 
   filter_management_tools:
     ParentImage|endswith:
-      - '\ccmexec.exe'
-      - '\sccmexec.exe'
+      - '\\ccmexec.exe'
+      - '\\sccmexec.exe'
 
   condition: selection_powershell and selection_encoded and not filter_management_tools
 

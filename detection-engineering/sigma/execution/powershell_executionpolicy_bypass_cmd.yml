@@ -1,0 +1,23 @@
+title: Suspicious PowerShell ExecutionPolicy Bypass from CMD
+id: 9b1e2c71-0a32-4c76-a1f1-ps-exec-bypass
+status: experimental
+description: Detects PowerShell launched from cmd.exe with ExecutionPolicy Bypass
+author: KuRo
+date: 2026/03/07
+
+logsource:
+  product: windows
+  category: process_creation
+
+detection:
+  selection:
+    ParentImage|endswith: '\\cmd.exe'
+    Image|endswith: '\\powershell.exe'
+    CommandLine|contains: 'ExecutionPolicy Bypass'
+
+  condition: selection
+
+falsepositives:
+  - Administrative scripts
+
+level: medium

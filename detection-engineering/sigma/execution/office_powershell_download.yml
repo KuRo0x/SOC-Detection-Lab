@@ -7,7 +7,7 @@ date: 2026-02-04
 tags:
   - attack.execution
   - attack.t1059.001
-  - attack.t1204.002
+  - attack.command_and_control
 
 logsource:
   product: windows
@@ -17,15 +17,15 @@ detection:
 
   selection_office_parent:
     ParentImage|endswith:
-      - '\WINWORD.EXE'
-      - '\EXCEL.EXE'
-      - '\POWERPNT.EXE'
-      - '\OUTLOOK.EXE'
+      - '\\WINWORD.EXE'
+      - '\\EXCEL.EXE'
+      - '\\POWERPNT.EXE'
+      - '\\OUTLOOK.EXE'
 
   selection_powershell_child:
     Image|endswith:
-      - '\powershell.exe'
-      - '\pwsh.exe'
+      - '\\powershell.exe'
+      - '\\pwsh.exe'
 
   selection_download_patterns:
     CommandLine|contains:
