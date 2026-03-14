@@ -1,3 +1,3 @@
 # Contributing
 
-This is a personal portfolio and learning project. Contributions are not open at this time.
+> Personal portfolio project — not open for contributions at this time.
