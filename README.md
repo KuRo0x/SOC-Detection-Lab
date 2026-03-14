@@ -1,12 +1,7 @@
-<!-- Banner -->
-<p align="center">
-  <img src="docs/assets/banner.png" alt="SOC Detection Lab" width="100%" />
-</p>
-
 <h1 align="center">SOC Detection Lab</h1>
 
 <p align="center">
-  <b>A detection-focused Virtual Security Operations Center (vSOC) simulating real SOC telemetry ingestion, investigation, and MITRE ATT&CK–aligned detection engineering.</b>
+  <b>A detection-focused Virtual Security Operations Center (vSOC) — built hands-on to simulate real SOC telemetry ingestion, detection engineering, and MITRE ATT&CK–aligned investigation.</b>
 </p>
 
 <p align="center">
@@ -28,6 +23,7 @@
 - [Architecture](#-architecture)
 - [Telemetry Sources](#-telemetry--data-sources)
 - [Detections](#-detections-implemented)
+- [Evidence](#-evidence)
 - [MITRE ATT&CK Coverage](#-mitre-attck-coverage)
 - [Incident Response Cases](#-incident-response-cases)
 - [Detection Engineering](#-detection-engineering)
@@ -40,14 +36,15 @@
 
 ## 📝 Overview
 
-This lab simulates a **small enterprise SOC monitoring environment** built entirely on virtual machines. It is designed to demonstrate practical blue team skills including detection engineering, log analysis, incident investigation, and MITRE ATT&CK mapping.
+This lab is a fully virtual SOC environment I built from scratch to practice real detection engineering, log analysis, and incident response. Every component is configured, every detection is validated against live telemetry, and every finding is documented the way a real SOC analyst would.
 
 | Property | Detail |
 |---|---|
 | **Host OS** | Windows 11 |
 | **Hypervisor** | VMware / VirtualBox |
 | **SIEM** | ELK Stack (Elasticsearch, Logstash, Kibana) |
-| **IDS/IPS** | Suricata (on pfSense) |
+| **IDS/IPS** | Suricata (Ubuntu Server) |
+| **Firewall** | pfSense |
 | **Endpoint Monitoring** | Sysmon + Winlogbeat |
 | **Detection Rules** | Sigma |
 | **Framework** | MITRE ATT&CK |
@@ -57,10 +54,7 @@ This lab simulates a **small enterprise SOC monitoring environment** built entir
 
 ## 🏗️ Architecture
 
-**Network Model**
-- Isolated virtual network (`VMnet3`) — no direct host-to-lab access
-- Single enforced gateway (pfSense)
-- All traffic inspected before reaching endpoint
+The lab runs on an isolated virtual network (`VMnet3`) — no direct host-to-lab access. All traffic passes through pfSense before reaching the endpoint, giving a single enforced inspection point.
 
 **Traffic Flow**
 ```
@@ -69,7 +63,7 @@ Kali Linux (Attacker)
   pfSense Firewall
   + Suricata IDS/IPS
         ↓
-  Windows 10 Victim
+  Windows 10 Endpoint
   (Sysmon + Winlogbeat)
         ↓
    ELK Stack (SIEM)
@@ -81,11 +75,15 @@ Kali Linux (Attacker)
 | VM | OS | Role |
 |---|---|---|
 | Attacker | Kali Linux | Adversary simulation |
-| Firewall/IDS | pfSense + Suricata | Network gateway & detection |
+| Firewall / IDS | pfSense + Suricata | Network gateway & detection |
 | Victim | Windows 10 | Monitored endpoint |
 | SIEM | Ubuntu Server | ELK Stack |
 
-Architecture diagram available in [`architecture/`](architecture/)
+**Lab Architecture Diagram**
+
+![Architecture Diagram](https://raw.githubusercontent.com/KuRo0x/vSOC-Lab/main/architecture/architecture-diagram.png)
+
+> 📸 *Replace with* `architecture/architecture-diagram.png` *once images are moved to this repo.*
 
 ---
 
@@ -94,18 +92,18 @@ Architecture diagram available in [`architecture/`](architecture/)
 ### Endpoint
 - Windows Security Event Logs
 - Sysmon (process execution, network activity, registry changes, DNS)
-- Forwarded via **Winlogbeat** → Logstash → Elasticsearch
+- Forwarded via **Winlogbeat** → TCP 5044 → Logstash → Elasticsearch
 
 ### Network
-- pfSense firewall logs
+- pfSense firewall logs (allow/deny events)
 - DNS enforcement events
-- Forwarded via **Syslog**
+- Forwarded via **Syslog** → Logstash
 
 ### IDS
-- Suricata structured JSON alerts
-- Protocol metadata: DNS, HTTP, TLS
+- Suricata structured JSON (`eve.json`) alerts
+- Protocol metadata: DNS, HTTP, TLS, connection tuples
 
-**Key Sysmon Event IDs Used**
+**Key Sysmon Event IDs**
 
 | Event ID | Description | Detection Use |
 |---|---|---|
@@ -120,16 +118,58 @@ Architecture diagram available in [`architecture/`](architecture/)
 
 ## 🚨 Detections Implemented
 
-| Detection | MITRE Technique | Data Source | Confidence |
-|---|---|---|---|
-| Suspicious Encoded PowerShell | T1059.001 | Sysmon EID 1 | 🟢 High |
-| LOLBin Abuse: Certutil | T1105 | Sysmon EID 1 | 🟢 High |
-| Registry Run Key Persistence | T1547.001 | Sysmon EID 13 | 🟢 High |
-| Local Account Creation | T1136.001 | Windows Security | 🟢 High |
-| Host & User Discovery | T1033 | Windows Security | 🟡 Medium |
-| DNS Policy Violation | T1071.004 | pfSense Logs | 🟢 High |
+| # | Detection | MITRE | Data Source | Confidence |
+|---|---|---|---|---|
+| D-001 | Suspicious Encoded PowerShell | T1059.001 | Sysmon EID 1 | 🟢 High |
+| D-002 | LOLBin Abuse: Certutil | T1105 | Sysmon EID 1 | 🟢 High |
+| D-003 | Registry Run Key Persistence | T1547.001 | Sysmon EID 13 | 🟢 High |
+| D-004 | Host & User Discovery | T1033 | Windows Security | 🟡 Medium |
+| D-005 | DNS Policy Violation | T1071.004 | pfSense Logs | 🟢 High |
+| D-006 | Unauthorized Local User Creation | T1136.001 | Windows Security | 🟢 High |
 
-Full detection logic, reproduction steps and analyst notes → [`docs/DETECTIONS.md`](docs/DETECTIONS.md)
+Full detection logic, reproduction steps, and analyst notes → [`docs/DETECTIONS.md`](docs/DETECTIONS.md)
+
+---
+
+## 📸 Evidence
+
+Real screenshots from the running lab — every detection validated against live telemetry.
+
+### Endpoint — PowerShell Encoded Command Detected
+![PowerShell Encoded Command](https://raw.githubusercontent.com/KuRo0x/vSOC-Lab/main/evidence/endpoint/powershell-encoded-command.png)
+> 📸 *Replace with* `evidence/endpoint/powershell-encoded-command.png` *once images are moved.*
+
+### Endpoint — Sysmon Operational Events
+![Sysmon Operational Events](https://raw.githubusercontent.com/KuRo0x/vSOC-Lab/main/evidence/endpoint/sysmon-operational-events.png)
+> 📸 *Replace with* `evidence/endpoint/sysmon-operational-events.png` *once images are moved.*
+
+### SIEM — Kibana Alert Fired
+![Kibana Alert](https://raw.githubusercontent.com/KuRo0x/vSOC-Lab/main/evidence/siem/kibana-alert-fired.png)
+> 📸 *Replace with* `evidence/siem/kibana-alert-fired.png` *once images are moved.*
+
+### SIEM — Logstash Running & Ingesting
+![Logstash Running](https://raw.githubusercontent.com/KuRo0x/vSOC-Lab/main/evidence/siem/logstash-running.png)
+> 📸 *Replace with* `evidence/siem/logstash-running.png` *once images are moved.*
+
+### Network — pfSense DNS Policy
+![pfSense DNS Policy](https://raw.githubusercontent.com/KuRo0x/vSOC-Lab/main/evidence/network/01_pfsense_dns_policy.png)
+> 📸 *Replace with* `evidence/network/01_pfsense_dns_policy.png` *once images are moved.*
+
+### Network — Firewall DNS Blocks
+![Firewall DNS Blocks](https://raw.githubusercontent.com/KuRo0x/vSOC-Lab/main/evidence/network/02_firewall_dns_blocks.png)
+> 📸 *Replace with* `evidence/network/02_firewall_dns_blocks.png` *once images are moved.*
+
+### IDS — Suricata eve.json Output
+![Suricata EVE JSON](https://raw.githubusercontent.com/KuRo0x/vSOC-Lab/main/evidence/ids/eve-json-sample.png)
+> 📸 *Replace with* `evidence/ids/eve-json-sample.png` *once images are moved.*
+
+### IDS — Suricata Service Status
+![Suricata Status](https://raw.githubusercontent.com/KuRo0x/vSOC-Lab/main/evidence/ids/suricata-status.png)
+> 📸 *Replace with* `evidence/ids/suricata-status.png` *once images are moved.*
+
+### MITRE ATT&CK — Coverage Map
+![MITRE ATT&CK Map](https://raw.githubusercontent.com/KuRo0x/vSOC-Lab/main/evidence/mitre/attack-mapping.png)
+> 📸 *Replace with* `evidence/mitre/attack-mapping.png` *once images are moved.*
 
 ---
 
@@ -144,25 +184,26 @@ Full detection logic, reproduction steps and analyst notes → [`docs/DETECTIONS
 | Discovery | T1033 | System Owner/User Discovery |
 | Command & Control | T1071.004 | Application Layer Protocol: DNS |
 
-> Mappings are based on **observed telemetry**, not assumptions. Full justification in [`docs/ATTACK_MAPPING.md`](docs/ATTACK_MAPPING.md)
+> All mappings are based on **observed telemetry**, not assumptions. Full justification → [`docs/ATTACK_MAPPING.md`](docs/ATTACK_MAPPING.md)
 
 ---
 
 ## 🛡️ Incident Response Cases
 
 ### INC-001 — Phishing-Driven Malware Delivery Attempt
-> Phishing-based malware delivery detected via endpoint telemetry and contained via pfSense firewall before payload execution.
+Phishing-based malware delivery detected via endpoint telemetry and contained via pfSense firewall **before payload execution**.
 
-**Key elements:**
 - Detection via Elastic (Winlogbeat + Sysmon)
 - Browser download artifact investigation (`.crdownload`, `Zone.Identifier`)
 - Network containment via pfSense IOC-based firewall aliases
-- Evidence-backed documentation + SOC-style playbook
+- Full evidence-backed documentation + SOC-style playbook
 
 📁 [`incidents/INC-001-phishing/`](incidents/INC-001-phishing/)
 
+---
+
 ### IR-001 — PowerShell Shortcut Attack
-> PowerShell execution and persistence via shortcut file, investigated end-to-end with Sysmon telemetry.
+PowerShell execution and persistence via shortcut file — investigated end-to-end with Sysmon telemetry, from initial execution through persistence mechanism identification.
 
 📁 [`incident-response/powershell-shortcut-attack/`](incident-response/powershell-shortcut-attack/)
 
@@ -170,16 +211,14 @@ Full detection logic, reproduction steps and analyst notes → [`docs/DETECTIONS
 
 ## 🔧 Detection Engineering
 
-The lab includes **Sigma rules** organized by MITRE ATT&CK tactic:
+Sigma rules organized by MITRE ATT&CK tactic — written in standard format, portable to any compatible SIEM.
 
 ```
 detection-engineering/sigma/
-├── execution/        ← PowerShell, LOLBin rules
-├── persistence/      ← Registry, account creation rules
-└── high-fidelity/    ← Validated, low-noise rules
+├── execution/        ← PowerShell abuse, Office macro spawning
+├── persistence/      ← Registry run keys, scheduled tasks, service creation
+└── high-fidelity/    ← Validated, low false-positive rules
 ```
-
-Rules are written in standard Sigma format and are portable to any compatible SIEM.
 
 📁 [`detection-engineering/`](detection-engineering/)
 
@@ -189,37 +228,35 @@ Rules are written in standard Sigma format and are portable to any compatible SI
 
 | Document | Description |
 |---|---|
-| [`INVENTORY.md`](docs/INVENTORY.md) | Lab components and services |
-| [`NETWORK.md`](docs/NETWORK.md) | Network topology and trust boundaries |
+| [`INVENTORY.md`](docs/INVENTORY.md) | Lab components, services, and runtime status |
+| [`NETWORK.md`](docs/NETWORK.md) | Network topology, IPs, and trust boundaries |
 | [`PIPELINE.md`](docs/PIPELINE.md) | Log ingestion and processing design |
-| [`DETECTIONS.md`](docs/DETECTIONS.md) | Detection logic and rationale |
-| [`ATTACK_MAPPING.md`](docs/ATTACK_MAPPING.md) | MITRE ATT&CK justification |
-| [`RUNBOOK.md`](docs/RUNBOOK.md) | Lab operation runbook |
+| [`DETECTIONS.md`](docs/DETECTIONS.md) | Detection logic, rationale, and reproduction steps |
+| [`ATTACK_MAPPING.md`](docs/ATTACK_MAPPING.md) | MITRE ATT&CK justification per technique |
+| [`RUNBOOK.md`](docs/RUNBOOK.md) | Per-alert analyst playbooks and triage workflow |
 
 ---
 
 ## ✅ Reviewer Quickstart
 
-Use this path to validate the lab end-to-end:
-
-1. **Confirm data ingestion** — open Kibana and verify events in `winlogbeat-*`, `pfsense-*`, `suricata-*`
-2. **Validate endpoint detections** — review [`docs/DETECTIONS.md`](docs/DETECTIONS.md) for reproduction steps
-3. **Validate network detections** — trigger a DNS policy violation, verify pfSense deny logs in Elasticsearch
-4. **Review evidence artifacts** — see [`evidence/`](evidence/) for endpoint, SIEM, and network screenshots
+1. **Confirm data ingestion** — open Kibana, verify recent events in `winlogbeat-*`, `pfsense-*`, `suricata-*`
+2. **Validate endpoint detections** — see [`docs/DETECTIONS.md`](docs/DETECTIONS.md) for exact reproduction steps
+3. **Validate network detections** — trigger a DNS violation, verify pfSense deny logs arrive in Elasticsearch
+4. **Review evidence** — see [`evidence/`](evidence/) for endpoint, SIEM, network, and IDS screenshots
 5. **Review Sigma rules** — see [`detection-engineering/sigma/`](detection-engineering/sigma/)
-6. **Review incident cases** — see [`incidents/`](incidents/) for full IR documentation
+6. **Review IR cases** — see [`incidents/`](incidents/) and [`incident-response/`](incident-response/)
 
 ---
 
 ## 💼 Skills Demonstrated
 
 - ✅ Network intrusion detection (Suricata + pfSense)
-- ✅ Endpoint telemetry monitoring (Sysmon)
-- ✅ Centralized log analysis (ELK Stack)
-- ✅ Detection engineering (Sigma rules)
+- ✅ Endpoint telemetry monitoring (Sysmon + Winlogbeat)
+- ✅ Centralized log analysis (ELK Stack / Kibana)
+- ✅ Detection engineering (Sigma rules, behavior-based logic)
 - ✅ MITRE ATT&CK mapping and coverage analysis
-- ✅ Incident response documentation
-- ✅ SOC investigation workflow
+- ✅ Incident response documentation (INC-001, IR-001)
+- ✅ SOC investigation workflow (triage → evidence → escalation)
 - ✅ Phishing awareness training design
 - ✅ Python automation (ATT&CK Navigator export)
 
@@ -227,21 +264,16 @@ Use this path to validate the lab end-to-end:
 
 ## 🎯 Why This Lab Matters
 
-This project demonstrates:
-- **SOC-style thinking** — alerts are operationalized, not just triggered
-- **Detection engineering fundamentals** — behavior-based, not signature-dependent
-- **Explainability** — every detection is justified and reproducible
-- **Clean separation of concerns** — architecture, detection, IR, and docs are independent
-- **Interview-ready** — defensible under technical questioning by both technical and non-technical reviewers
+This isn't a tutorial follow-along — it's a lab I designed, configured, broke, fixed, and documented myself. Every detection is validated against real telemetry. Every incident is documented the way it would be in a real SOC. The goal was to build something I can walk a hiring manager through and defend technically — not just show off.
 
 ---
 
 ## 🔒 Scope & Limitations
 
-- Defensive monitoring only — no exploitation or malware deployment
+- Defensive monitoring only — no exploitation or live malware
 - No automated response; containment is manually implemented and documented
-- Non-production lab environment
-- Focus is on **visibility, detection, and explainability**
+- Non-production isolated lab environment
+- Focus: **visibility, detection, and explainability**
 
 ---
 
