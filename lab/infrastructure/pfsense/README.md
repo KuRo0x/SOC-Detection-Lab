@@ -17,12 +17,13 @@
 
 ## Network Interfaces
 
-| Interface | Name | IP Address | Subnet | Gateway | MAC |
-|---|---|---|---|---|---|
-| WAN | em0 | 192.168.164.129 | /24 | 192.168.164.2 | 00:0c:29:95:38:a5 |
-| LAN | em1 | 172.16.0.1 | /24 | — | 00:0c:29:95:38:af |
+| Interface | VMware Adapter | Network | IP Address | Subnet | Gateway | MAC |
+|---|---|---|---|---|---|---|
+| WAN | Network Adapter 1 | NAT (VMnet8) | 192.168.164.129 | /24 | 192.168.164.2 | 00:0c:29:95:38:a5 |
+| LAN | Network Adapter 2 | Custom (VMnet3) | 172.16.0.1 | /24 | — | 00:0c:29:95:38:af |
 
-> Both interfaces are on VMnet3 (isolated lab network).
+> **WAN** uses NAT to share the host machine's internet connection.
+> **LAN** is on VMnet3 — the isolated internal lab network where all VMs communicate.
 
 ---
 
@@ -59,6 +60,8 @@
 ## Role in Lab
 
 - Acts as the **sole gateway** for the internal LAN (172.16.0.1/24)
+- **WAN** connects to the internet via NAT through the host
+- **LAN (VMnet3)** is the isolated segment connecting all lab VMs
 - Enforces **DNS policy** — all DNS goes through pfSense resolver
 - Provides **network-level containment** during incident response
 - Logs all blocked traffic for SIEM correlation
