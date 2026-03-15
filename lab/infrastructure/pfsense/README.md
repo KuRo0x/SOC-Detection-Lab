@@ -36,23 +36,17 @@ All DNS queries from lab VMs are forced through pfSense. Direct external DNS is 
 
 ---
 
-## Firewall Rules — LAN
+## Firewall Rules — LAN (Base Config)
 
 | # | State | Protocol | Source | Destination | Port | Purpose |
 |---|---|---|---|---|---|---|
 | 1 | ✅ | Any | Any | LAN Address | 80 | Anti-lockout (WebUI access) |
-| 2 | ❌ | IPv4 TCP | Any | ATTACKER_KALI_INC001 | WEB_PORTS | Block attacker C2 infrastructure (INC-001) |
-| 3 | ✅ | IPv4 TCP/UDP | LAN | This Firewall | 53 | Force DNS through pfSense |
-| 4 | ❌ | IPv4 TCP/UDP | LAN | Any | 53 | Block direct DNS bypass |
-| 5 | ✅ | IPv4 | LAN | Any | Any | Default outbound allow |
-| 6 | ✅ | IPv6 | LAN | Any | Any | Default outbound allow (IPv6) |
+| 2 | ✅ | IPv4 TCP/UDP | LAN | This Firewall | 53 | Force DNS through pfSense |
+| 3 | ❌ | IPv4 TCP/UDP | LAN | Any | 53 | Block direct DNS bypass |
+| 4 | ✅ | IPv4 | LAN | Any | Any | Default outbound allow |
+| 5 | ✅ | IPv6 | LAN | Any | Any | Default outbound allow (IPv6) |
 
-### Aliases
-
-| Alias | Type | Value | Created For |
-|---|---|---|---|
-| ATTACKER_KALI_INC001 | Host | Attacker Kali VM IP | INC-001 containment |
-| WEB_PORTS | Port | TCP 80, 443 | Web traffic blocking |
+> Incident-specific containment rules (aliases, blocks) are documented per incident under `incidents/`.
 
 ---
 
@@ -60,5 +54,5 @@ All DNS queries from lab VMs are forced through pfSense. Direct external DNS is 
 
 - **Single enforcement point** — every VM on VMnet3 routes through pfSense
 - **DNS control** — no VM can bypass the resolver
-- **Incident containment** — attacker infrastructure blocked at network level via aliases
+- **Incident containment** — attacker infrastructure blocked at network level via aliases during active incidents
 - **Traffic visibility** — all blocked traffic logged for SIEM ingestion
