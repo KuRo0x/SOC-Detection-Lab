@@ -36,17 +36,15 @@ All DNS queries from lab VMs are forced through pfSense. Direct external DNS is 
 
 ---
 
-## Firewall Rules — LAN (Base Config)
+## Firewall Rules — LAN (Current Active Config)
 
-| # | State | Protocol | Source | Destination | Port | Purpose |
-|---|---|---|---|---|---|---|
-| 1 | ✅ | Any | Any | LAN Address | 80 | Anti-lockout (WebUI access) |
-| 2 | ✅ | IPv4 TCP/UDP | LAN | This Firewall | 53 | Force DNS through pfSense |
-| 3 | ❌ | IPv4 TCP/UDP | LAN | Any | 53 | Block direct DNS bypass |
-| 4 | ✅ | IPv4 | LAN | Any | Any | Default outbound allow |
-| 5 | ✅ | IPv6 | LAN | Any | Any | Default outbound allow (IPv6) |
+| # | Protocol | Source | Destination | Port | Purpose |
+|---|---|---|---|---|---|
+| 1 | Any | Any | LAN Address | 80 | Anti-lockout (WebUI access) |
+| 2 | IPv4 | LAN subnets | Any | Any | Default outbound allow |
+| 3 | IPv6 | LAN subnets | Any | Any | Default outbound allow (IPv6) |
 
-> Incident-specific containment rules (aliases, blocks) are documented per incident under `incidents/`.
+> Incident-specific containment rules (aliases, blocks) are added during active incidents and documented under `incidents/`.
 
 ---
 
