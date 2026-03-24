@@ -100,7 +100,9 @@ Enable DHCP: yes (range 172.16.0.10 – 172.16.0.50)
 ### Enable Syslog Forwarding to SIEM
 1. Go to `Status > System Logs > Settings`
 2. Enable remote syslog
-3. Remote server: `172.16.0.4`, port `514`, protocol `UDP`
+3. Remote server: `172.16.0.4:5140`, protocol `UDP`
+
+> **Note:** We use port `5140` instead of the standard `514` because Linux blocks ports below 1024 for non-root processes. Logstash runs as a non-root user so it cannot bind to port 514.
 
 ---
 
@@ -137,12 +139,12 @@ Edit `/etc/elasticsearch/elasticsearch.yml`:
 ```yaml
 network.host: 0.0.0.0
 http.port: 9200
-xpack.security.enabled: false
+xpack.security.enabled: true
 ```
 ```bash
 sudo systemctl enable --now elasticsearch
 # Verify:
-curl http://localhost:9200
+curl -sk -u elastic:yourpassword https://localhost:9200
 ```
 
 ### Install Logstash
@@ -150,47 +152,66 @@ curl http://localhost:9200
 sudo apt install logstash -y
 ```
 
-Create pipeline config at `/etc/logstash/conf.d/soc-lab.conf`:
+Create pipeline config at `/etc/logstash/conf.d/master-lab.conf`:
 ```ruby
 input {
-  beats {
-    port => 5044
-  }
-  udp {
-    port => 514
-    type => "pfsense"
-  }
   file {
     path => "/var/log/suricata/eve.json"
     codec => "json"
-    type => "suricata"
-    sincedb_path => "/dev/null"
+    start_position => "beginning"
+    add_field => { "log_source" => "suricata" }
+  }
+  beats {
+    port => 5044
+    add_field => { "log_source" => "winlogbeat" }
+  }
+  udp {
+    port => 5140
+    type => "syslog"
+    add_field => { "log_source" => "pfsense" }
   }
 }
 
 filter {
-  if [type] == "pfsense" {
-    grok {
-      match => { "message" => "%{SYSLOGTIMESTAMP:log_timestamp} %{GREEDYDATA:fw_message}" }
+  if [dest_ip] and [event_type] {
+    if [dest_ip] !~ /^10\.|^192\.168\.|^172\.(1[6-9]|2[0-9]|3[0-1])\./ {
+      geoip {
+        source => "dest_ip"
+        target => "geo"
+      }
     }
   }
-  date {
-    match => [ "log_timestamp", "MMM dd HH:mm:ss", "MMM  d HH:mm:ss" ]
-    target => "@timestamp"
+
+  if [winlog][event_data][DestinationIp] {
+    if [winlog][event_data][DestinationIp] !~ /^10\.|^192\.168\.|^172\.(1[6-9]|2[0-9]|3[0-1])\./ {
+      geoip {
+        source => "[winlog][event_data][DestinationIp]"
+        target => "geo"
+      }
+    }
   }
 }
 
 output {
   elasticsearch {
-    hosts => ["localhost:9200"]
-    index => "%{type}-%{+YYYY.MM.dd}"
+    hosts => ["https://localhost:9200"]
+    user => "elastic"
+    password => "${ES_PWD}"
+    ssl_verification_mode => "none"
+    index => "%{log_source}-%{+YYYY.MM.dd}"
   }
 }
 ```
+
+Set the Elasticsearch password as an environment variable:
+```bash
+sudo nano /etc/environment
+# Add this line:
+ES_PWD=yourpassword
+```
 ```bash
 sudo systemctl enable --now logstash
-# Check it's listening on port 5044:
-sudo ss -tlnp | grep 5044
+sudo ss -tlnup | grep 5044
 ```
 
 ### Install Kibana
@@ -202,7 +223,7 @@ Edit `/etc/kibana/kibana.yml`:
 ```yaml
 server.host: "0.0.0.0"
 server.port: 5601
-elasticsearch.hosts: ["http://localhost:9200"]
+elasticsearch.hosts: ["https://localhost:9200"]
 ```
 ```bash
 sudo systemctl enable --now kibana
@@ -324,10 +345,13 @@ Once logs start flowing, set up index patterns in Kibana:
 sudo systemctl status elasticsearch logstash kibana suricata
 
 # Check Elasticsearch has indices
-curl http://localhost:9200/_cat/indices?v
+curl -sk -u elastic:$ES_PWD https://localhost:9200/_cat/indices?v
 
 # Check Logstash is listening
-sudo ss -tlnp | grep 5044
+sudo ss -tlnup | grep 5044
+
+# Check pfSense syslog is arriving
+sudo tcpdump -i ens33 udp port 5140 -c 5
 ```
 
 On Windows — open `cmd` and run:
@@ -347,10 +371,12 @@ Then go to Kibana → Discover → select `winlogbeat-*` → you should see **Sy
 | Problem | Check |
 |---------|-------|
 | No logs in Kibana | `winlogbeat.exe test output` on Windows |
-| Logstash not receiving | `sudo ss -tlnp \| grep 5044` on Ubuntu |
-| Elasticsearch down | `curl http://localhost:9200` on Ubuntu |
+| Logstash not receiving Beats | `sudo ss -tlnup \| grep 5044` on Ubuntu |
+| Logstash not receiving syslog | `sudo tcpdump -i ens33 udp port 5140 -c 5` |
+| Elasticsearch down | `curl -sk -u elastic:$ES_PWD https://localhost:9200` |
 | Suricata not alerting | `sudo tail -f /var/log/suricata/eve.json` |
-| pfSense syslog not arriving | Check firewall rule allows UDP 514 from LAN |
+| pfSense syslog not arriving | Confirm pfSense remote log server is set to `172.16.0.4:5140` |
+| Permission denied on UDP port | Use port 5140 or higher — Linux blocks ports below 1024 for non-root |
 
 ---
 
