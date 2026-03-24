@@ -51,7 +51,7 @@ All VMs live on an isolated virtual switch (**VMnet3**). Internet goes out throu
 | pfSense | Firewall + IDS gateway | `172.16.0.1` |
 | Ubuntu Server | SIEM (ELK Stack) | `172.16.0.4` |
 | Windows 10 | Victim endpoint | `172.16.0.10` |
-| Kali Linux | Attacker | `172.16.0.20` |
+| Kali Linux | Attacker | `172.16.0.11` *(DHCP from pfSense)* |
 
 ---
 
@@ -62,13 +62,13 @@ All VMs live on an isolated virtual switch (**VMnet3**). Internet goes out throu
 2. Add a new network → select **VMnet3**
 3. Set type to **Host-only**
 4. Subnet IP: `172.16.0.0`, Mask: `255.255.255.0`
-5. Disable DHCP (we assign static IPs manually)
+5. Enable DHCP so Kali gets an IP automatically
 
 **VirtualBox:**
 1. Go to `File > Host Network Manager`
 2. Create a new host-only adapter
 3. Set IP to `172.16.0.1`, mask `255.255.255.0`
-4. Disable DHCP server
+4. Enable DHCP server
 
 ---
 
@@ -87,7 +87,7 @@ After boot, set LAN IP:
 ```
 Option 2 → Set interface(s) IP address
 LAN → 172.16.0.1 / 24
-No DHCP server
+Enable DHCP: yes (range 172.16.0.10 – 172.16.0.50)
 ```
 
 ### Enable Suricata on LAN
@@ -101,12 +101,6 @@ No DHCP server
 1. Go to `Status > System Logs > Settings`
 2. Enable remote syslog
 3. Remote server: `172.16.0.4`, port `514`, protocol `UDP`
-
-### Block Direct External DNS (Port 53)
-This forces all DNS through pfSense and makes DNS violations detectable.
-1. Go to `Firewall > Rules > LAN`
-2. Add rule: **Block** | Protocol: TCP/UDP | Destination port: 53 | Destination: `! 172.16.0.1`
-3. Place this rule **above** the default allow-all rule
 
 ---
 
@@ -305,7 +299,7 @@ Start-Service winlogbeat
 
 - Download: [Kali Linux](https://www.kali.org/get-kali/)
 - RAM: `2 GB` | Disk: `20 GB`
-- Network: VMnet3 → IP `172.16.0.20` (or DHCP if you enabled it)
+- Network: VMnet3 → gets IP via DHCP from pfSense (currently `172.16.0.11`)
 
 No special config needed. This is your attack machine.
 
