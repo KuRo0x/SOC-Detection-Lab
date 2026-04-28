@@ -1,0 +1,15 @@
+# Evidence folder for INC-005 – Nmap Port Scan & Network Recon
+#
+# Screenshots (PNG) must be added manually via git push from your local machine
+# because binary files cannot be pushed via the GitHub API as text.
+#
+# Files to add:
+#   - kibana_sysmon_event3_spike.png   (Kibana Discover – Sysmon Event ID 3 spike at 03:06)
+#   - kibana_sysmon_rdp_probe.png      (Kibana – Sysmon Event ID 3 RDP probe from 172.16.0.11)
+#
+# Copy from vSOC-Lab:
+#   cp ../vSOC-Lab/incidents/INC-005-nmap-recon/evidence/*.png \
+#      incidents/INC-005-nmap-recon/evidence/
+#   git add incidents/INC-005-nmap-recon/evidence/*.png
+#   git commit -m "feat: add INC-005 Kibana evidence screenshots"
+#   git push
