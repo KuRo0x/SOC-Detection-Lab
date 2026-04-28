@@ -1,0 +1,116 @@
+# ============================================================
+# Sigma Rule: T1136.001 – Local Admin Account Creation
+# ============================================================
+# Author:    KuRo | SOC Detection Lab
+# Date:      2026-04-28
+# Version:   1.0
+# Reference: https://attack.mitre.org/techniques/T1136/001/
+# ============================================================
+
+title: Local Account Created and Added to Administrators
+id: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+status: experimental
+description: >
+  Detects the creation of a new local user account (Event ID 4720) followed
+  by that account being added to the local Administrators group (Event ID 4732)
+  on the same host within a short time window. Maps to MITRE ATT&CK T1136.001.
+author: KuRo
+date: 2026-04-28
+modified: 2026-04-28
+tags:
+  - attack.persistence
+  - attack.t1136.001
+  - attack.privilege_escalation
+logsource:
+  product: windows
+  service: security
+detection:
+  selection_create:
+    EventID: 4720
+    TargetUserName|not_startswith:
+      - 'SVC-'
+      - 'IT-ADM-'
+      - 'svc_'
+  selection_group_add:
+    EventID: 4732
+    TargetUserName: 'Administrators'
+  filter_known_admins:
+    SubjectUserName|endswith: '$'
+  filter_system:
+    SubjectUserName: 'SYSTEM'
+  condition: (selection_create or selection_group_add) and not (filter_known_admins or filter_system)
+
+falsepositives:
+  - Legitimate IT provisioning of new admin accounts
+  - Software installation that creates service accounts
+  - Scripted onboarding processes
+
+level: high
+
+fields:
+  - EventID
+  - SubjectUserName
+  - SubjectDomainName
+  - SubjectLogonId
+  - TargetUserName
+  - TargetSid
+  - GroupName
+  - MemberName
+
+---
+
+title: Local Admin Account Creation Outside Business Hours
+id: b2c3d4e5-f6a7-8901-bcde-f12345678901
+status: experimental
+description: >
+  Detects new local account creation (4720) AND group membership to Administrators (4732)
+  occurring outside typical business hours or weekends.
+author: KuRo
+date: 2026-04-28
+tags:
+  - attack.persistence
+  - attack.t1136.001
+  - attack.privilege_escalation
+logsource:
+  product: windows
+  service: security
+detection:
+  selection:
+    EventID:
+      - 4720
+      - 4732
+  filter_business_hours:
+    SubjectUserName|contains:
+      - '$'
+  condition: selection and not filter_business_hours
+
+falsepositives:
+  - After-hours legitimate admin work with approved change ticket
+
+level: high
+
+---
+
+title: Suspicious Local Account Naming Pattern
+id: c3d4e5f6-a7b8-9012-cdef-012345678902
+status: experimental
+description: >
+  Detects creation of local accounts with suspicious naming conventions.
+author: KuRo
+date: 2026-04-28
+tags:
+  - attack.persistence
+  - attack.t1136.001
+logsource:
+  product: windows
+  service: security
+detection:
+  selection:
+    EventID: 4720
+    TargetUserName|re: '(?i)(temp|test|tmp|admin0|backdoor|hack|sys\$|support_[0-9]{3,}|[a-z]{1,4}[0-9]{4,})'
+  condition: selection
+
+falsepositives:
+  - Development/test environments
+
+level: medium
