@@ -26,6 +26,17 @@ This case reflects a realistic SOC workflow: detection, investigation, containme
 
 ---
 
+## MITRE ATT&CK Mapping
+
+| Technique ID | Name | Tactic |
+|---|---|---|
+| T1566.002 | Phishing: Spearphishing Link | Initial Access |
+| T1204.001 | User Execution: Malicious Link | Execution |
+| T1197 | BITS Jobs / Browser Download Artifact | Defense Evasion |
+| T1562.001 | Impair Defenses: Disable or Modify Tools | Defense Evasion |
+
+---
+
 ## Detection Summary
 - Suspicious browser download artifacts identified (`.crdownload`)
 - Internet-origin file markers observed (`Zone.Identifier`)
@@ -71,4 +82,5 @@ Malicious delivery attempt successfully contained. No system compromise observed
 | [`timeline.md`](timeline.md) | Chronological event timeline |
 | [`playbook.md`](playbook.md) | Reusable response playbook |
 | [`improvements.md`](improvements.md) | Post-incident improvements |
-| [`evidence/`](evidence/) | Screenshots and artifacts |
+| [`evidence/elastic/`](evidence/elastic/) | Elastic SIEM screenshots |
+| [`evidence/firewall/`](evidence/firewall/) | pfSense firewall screenshots |
