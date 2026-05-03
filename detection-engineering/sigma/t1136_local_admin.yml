@@ -1,0 +1,40 @@
+title: T1136.001 - Local Admin Account Created and Added to Administrators
+id: c022ad66-52a0-45f5-a1f4-dbb7311e1203
+status: experimental
+description: >
+  Detects when a new local user account is created (Event 4720) and
+  immediately added to the local Administrators group (Event 4732).
+  This is a common persistence technique mapped to MITRE T1136.001.
+author: KuRo
+date: 2026/04/28
+references:
+  - https://attack.mitre.org/techniques/T1136/001/
+  - https://github.com/KuRo0x/SOC-Detection-Lab
+tags:
+  - attack.persistence
+  - attack.t1136.001
+  - attack.t1136
+  - attack.privilege_escalation
+  - attack.t1078.001
+logsource:
+  product: windows
+  service: security
+detection:
+  account_created:
+    EventID: 4720
+  added_to_admins:
+    EventID: 4732
+    GroupName: 'Administrators'
+  condition: account_created and added_to_admins
+fields:
+  - EventID
+  - TargetUserName
+  - SubjectUserName
+  - SubjectLogonId
+  - GroupName
+  - MemberName
+falsepositives:
+  - Legitimate IT administrator creating a new local admin account
+  - Software installation that requires a local admin account
+  - Automated provisioning scripts (should be allow-listed by SubjectUserName)
+level: high

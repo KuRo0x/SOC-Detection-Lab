@@ -1,0 +1,1 @@
+winlog.channel:Security AND (event.code:4720 AND (event.code:4732 AND winlog.event_data.GroupName:Administrators))
