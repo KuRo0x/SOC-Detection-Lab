@@ -14,5 +14,5 @@ The phishing infrastructure was hosted on a Kali Linux VM within the lab environ
 - No further download or callback activity observed
 
 ## Evidence
-- Firewall rule config: `evidence/firewall/pfsense-rule-inc001.png`
-- Firewall logs: `evidence/firewall/pfsense-logs-inc001.png`
+- Firewall alias config: [`evidence/firewall/pfsense-alias-attacker-inc001.png`](evidence/firewall/pfsense-alias-attacker-inc001.png)
+- Firewall LAN block rule: [`evidence/firewall/pfsense-lan-block-rule-inc001.png`](evidence/firewall/pfsense-lan-block-rule-inc001.png)
