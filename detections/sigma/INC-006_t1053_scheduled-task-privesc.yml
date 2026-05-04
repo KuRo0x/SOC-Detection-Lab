@@ -1,0 +1,33 @@
+title: Scheduled Task Created with SYSTEM Privileges
+id: 106ef236-1fca-4b5f-bc15-c9ab938f08da
+status: stable
+description: Detects creation of a scheduled task configured to run as SYSTEM from a non-privileged account. Part of INC-006 attack chain (continuation of T1136.001 local account creation in INC-003).
+references:
+  - https://attack.mitre.org/techniques/T1053/005/
+author: KuRo (SOC-Detection-Lab)
+date: 2026-05-04
+tags:
+  - attack.t1053.005
+logsource:
+  product: windows
+  category: process_creation
+detection:
+  selection_create:
+    Image|endswith: '\schtasks.exe'
+    CommandLine|contains|all:
+      - '/create'
+      - '/ru'
+      - 'SYSTEM'
+  selection_nonstandard_path:
+    CommandLine|contains:
+      - 'C:\Windows\Temp\'
+      - 'C:\Users\'
+      - 'C:\ProgramData\'
+  filter_legit:
+    CommandLine|contains:
+      - 'C:\Windows\System32\'
+      - 'C:\Program Files\'
+  condition: selection_create and selection_nonstandard_path and not filter_legit
+falsepositives:
+  - Legitimate admin scripts using SYSTEM tasks with Temp paths
+level: high
