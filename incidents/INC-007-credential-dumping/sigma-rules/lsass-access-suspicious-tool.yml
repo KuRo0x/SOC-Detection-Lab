@@ -1,0 +1,44 @@
+title: Suspicious Process Accessing LSASS Memory
+id: 32d0d3e2-e58d-4d41-926f-8aa4b01c0a7a
+status: stable
+description: Detects non-system processes accessing lsass.exe memory, commonly used for credential dumping. Excludes known-good Windows system processes validated via baseline analysis.
+references:
+    - https://attack.mitre.org/techniques/T1003/001/
+author: KuRo (vSOC-Lab)
+date: 2026/05/05
+logsource:
+    product: windows
+    category: process_access
+detection:
+    selection:
+        EventID: 10
+        TargetImage|endswith: '\lsass.exe'
+        GrantedAccess|contains:
+            - '0x1410'
+            - '0x1FFFFF'
+            - '0x1010'
+            - '0x1438'
+    filter_system:
+        SourceImage|startswith:
+            - 'C:\Windows\System32\'
+            - 'C:\Windows\SysWOW64\'
+            - 'C:\Program Files\Windows Defender\'
+            - 'C:\ProgramData\Microsoft\Windows Defender\'
+    filter_known_good:
+        SourceImage|endswith:
+            - '\svchost.exe'
+            - '\wininit.exe'
+            - '\csrss.exe'
+            - '\MsMpEng.exe'
+            - '\wmiprvse.exe'
+            - '\vmtoolsd.exe'
+    condition: selection and not filter_system and not filter_known_good
+falsepositives:
+    - Legitimate security software
+    - System administration tools running from approved paths
+    - Backup software with memory access capabilities
+level: high
+tags:
+    - attack.credential_access
+    - attack.t1003.001
+    - attack.t1003

@@ -1,0 +1,30 @@
+title: ProcDump Used to Dump LSASS Memory
+id: 9bd012ee-0dff-44d7-84a0-aa698cfd87a3
+status: stable
+description: Detects usage of Sysinternals ProcDump to create a memory dump of the lsass.exe process. This is a common living-off-the-land credential dumping technique.
+references:
+    - https://attack.mitre.org/techniques/T1003/001/
+author: KuRo (vSOC-Lab)
+date: 2026/05/05
+logsource:
+    product: windows
+    category: process_creation
+detection:
+    selection_img:
+        - Image|endswith: '\procdump.exe'
+        - Image|endswith: '\procdump64.exe'
+        - OriginalFileName: 'procdump'
+    selection_cli:
+        CommandLine|contains:
+            - 'lsass'
+            - ' -ma '
+    condition: selection_img and selection_cli
+falsepositives:
+    - Legitimate IT troubleshooting with ProcDump from approved paths
+    - Authorized memory dump collection for debugging purposes
+level: high
+tags:
+    - attack.credential_access
+    - attack.t1003.001
+    - attack.defense_evasion
+    - attack.t1036
