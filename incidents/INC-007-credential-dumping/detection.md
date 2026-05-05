@@ -5,8 +5,8 @@
 | Component | Event ID | Role |
 |-----------|----------|------|
 | Sysmon | 10 | Primary — LSASS process access |
-| Sysmon | 1 | Process creation (mimikatz, procdump) |
-| Sysmon | 11 | File creation (lsass.dmp) |
+| Sysmon | 1 | Process creation (mimikatz, procdump, rundll32) |
+| Sysmon | 11 | File creation (lsass.dmp, dump.bin) |
 | Windows Security | 4656 | Handle to LSASS (optional, if auditing enabled) |
 
 ---
@@ -15,64 +15,94 @@
 
 **Primary — Malicious LSASS access only:**
 ```kql
-event.code: "10" AND winlog.event_data.TargetImage: "*lsass.exe*" AND (winlog.event_data.SourceImage: "*mimikatz*" OR winlog.event_data.SourceImage: "*procdump*")
+event.code: "10" AND winlog.event_data.TargetImage: "*lsass.exe*"
+AND (winlog.event_data.SourceImage: "*mimikatz*"
+  OR winlog.event_data.SourceImage: "*procdump*"
+  OR winlog.event_data.SourceImage: "*rundll32*")
 ```
 
 **Full attack chain correlation:**
 ```kql
 (
-  (event.code: "10" AND winlog.event_data.TargetImage: "*lsass.exe*" AND NOT winlog.event_data.SourceImage: ("C:\\Windows\\system32\\svchost.exe" OR "C:\\Windows\\system32\\wbem\\wmiprvse.exe" OR "C:\\Windows\\System32\\wininit.exe" OR "C:\\Windows\\System32\\csrss.exe"))
-  OR
-  (event.code: "1" AND (winlog.event_data.Image: "*mimikatz*" OR winlog.event_data.Image: "*procdump*"))
-  OR
-  (event.code: "11" AND winlog.event_data.TargetFilename: "*lsass.dmp*")
+  (event.code: "10" AND winlog.event_data.TargetImage: "*lsass.exe*"
+   AND NOT winlog.event_data.SourceImage:
+     ("*svchost.exe" OR "*wmiprvse.exe" OR "*wininit.exe" OR "*csrss.exe"))
+  OR (event.code: "1" AND (winlog.event_data.Image: "*mimikatz*"
+      OR winlog.event_data.Image: "*procdump*"))
+  OR (event.code: "1" AND winlog.event_data.CommandLine: ("*comsvcs*" AND "*MiniDump*"))
+  OR (event.code: "11" AND winlog.event_data.TargetFilename: ("*lsass.dmp*" OR "*dump.bin*"))
 )
 AND host.name: "desktop-dpu3cdq"
 ```
 
-**All LSASS Event 10 (for baseline review):**
-```kql
-event.code: "10" AND winlog.event_data.TargetImage: "*lsass.exe*"
+---
+
+## Baseline & False Positive Analysis
+
+**2-hour observation window (22:10–22:27, May 5 2026):**
+
+| SourceImage | Count | GrantedAccess | Verdict |
+|-------------|-------|---------------|---------|
+| C:\Windows\system32\svchost.exe | ~29 | 0x1000 | ✅ Legitimate — service query |
+| C:\Windows\system32\wbem\wmiprvse.exe | ~4 | 0x1400 | ✅ Legitimate — WMI perf counters |
+| C:\Windows\SysWOW64\rundll32.exe | 5 | TBD | 🔴 Malicious — comsvcs MiniDump |
+| C:\Windows\system32\rundll32.exe | 2 | TBD | 🔴 Malicious — comsvcs MiniDump |
+| C:\Tools\procdump\procdump64.exe | 2 | 0x1FFFFF | 🔴 Malicious — ProcDump |
+| C:\Tools\mimikatz\x64\mimikatz.exe | ~2 | 0x1410 | 🔴 Malicious — Mimikatz |
+
+**Total Event 10 documents in 2hr window:** ~35+7 = ~42  
+**Malicious:** ~11 (mimikatz + procdump + comsvcs rundll32)  
+**Legitimate:** ~33 (svchost + wmiprvse)  
+**FP Rate in lab (tuned rule v2):** 0%  
+**Estimated production FP rate:** 5–10% (security tools, backup software, diagnostics)
+
+---
+
+## Evasion Test Results — comsvcs.dll MiniDump
+
+**Date:** 2026-05-05 22:25–22:27  
+**Technique:** T1218.011 — Signed Binary Proxy Execution: Rundll32  
+**Command tested:**
+```cmd
+rundll32.exe C:\windows\system32\comsvcs.dll MiniDump 668 C:\Temp\dump.bin full
 ```
 
----
+**Result:** dump.bin = 0 bytes (dump failed — privilege insufficient without SYSTEM context)  
+**BUT:** Sysmon Event 10 fired 7 times from `rundll32.exe` accessing `lsass.exe`
 
-## Baseline Analysis
+| Sigma Rule v1 | Result |
+|---------------|--------|
+| lsass-access-suspicious-tool.yml v1 | ❌ MISS — rundll32.exe excluded by filter_system block |
+| **lsass-access-suspicious-tool.yml v2** | **✅ CATCH — rundll32.exe explicitly re-added** |
+| **comsvcs-minidump-lsass.yml (new)** | **✅ CATCH — detects comsvcs+MiniDump command line** |
 
-From 35 Event 10 documents observed targeting `lsass.exe`, the following were confirmed legitimate:
+**Root cause of bypass:**
+The original Sigma rule excluded all processes from `C:\Windows\System32\` and `C:\Windows\SysWOW64\`.
+`rundll32.exe` lives in both paths, making `comsvcs.dll MiniDump` completely invisible to v1.
 
-| SourceImage | GrantedAccess | Verdict |
-|-------------|---------------|---------|
-| C:\Windows\system32\svchost.exe | 0x1000 | ✅ Legitimate — service query |
-| C:\Windows\system32\wbem\wmiprvse.exe | 0x1400 | ✅ Legitimate — WMI perf counters (CorperfmonExt.dll) |
-| C:\Tools\procdump\procdump64.exe | 0x1FFFFF | 🔴 Malicious — full process access |
-| C:\Tools\mimikatz\x64\mimikatz.exe | 0x1410 | 🔴 Malicious — credential read |
-
-**Key differentiator:** Malicious tools request `0x1FFFFF` (PROCESS_ALL_ACCESS) or `0x1410` (QUERY + VM_READ). Legitimate system tools rarely exceed `0x1400`.
-
----
-
-## False Positive Analysis
-
-| Tool | Legitimate Use | How to Differentiate |
-|------|----------------|---------------------|
-| ProcDump | IT crash dump collection | Run from `C:\Program Files\` or `C:\Windows\`, not `C:\Tools\` |
-| Task Manager | View process info | GrantedAccess = 0x1000, source = `taskmgr.exe` |
-| MsMpEng.exe | AV memory scan | Signed binary from `C:\Program Files\Windows Defender\` |
-| wmiprvse.exe | WMI perf collection | CallTrace contains `CorperfmonExt.dll` — distinctive |
-
-**Lab FP rate:** 0%  
-**Expected production FP rate:** 5–15% without tuning
+**Fix applied:**
+- Moved `rundll32.exe` OUT of the system path exclusion using a `filter_lolbin_exception`
+- Added dedicated `comsvcs-minidump-lsass.yml` rule for command-line based detection
 
 ---
 
-## Detection Gaps
+## Detection Coverage Matrix
 
-| Evasion Technique | Detected? | Reason |
-|-------------------|-----------|--------|
-| Direct mimikatz (disk) | ✅ Yes | Sysmon Event 1 + Event 10 |
-| ProcDump memory dump | ✅ Yes | Sysmon Event 10 + Event 11 |
-| comsvcs.dll MiniDump (`rundll32.exe`) | ❌ No | SourceImage looks like legit Windows tool |
-| In-memory Mimikatz (PowerShell) | ⚠️ Partial | Needs PowerShell ScriptBlock logging |
-| Direct syscall / unhooking | ❌ No | Bypasses Sysmon kernel callbacks |
-| Task Manager dump (RDP) | ⚠️ Partial | Event 10 fires but source is `taskmgr.exe` (common FP) |
+| Technique | Sysmon Event 10 | Sigma Rule v1 | Sigma Rule v2 |
+|-----------|:-----------:|:----------:|:----------:|
+| mimikatz.exe (disk) | ✅ | ✅ | ✅ |
+| procdump64.exe -ma lsass | ✅ | ✅ | ✅ |
+| comsvcs.dll via rundll32 | ✅ | ❌ **BYPASS** | ✅ **FIXED** |
+| In-memory Mimikatz (PowerShell) | ⚠️ Partial | ❌ | ❌ (needs Event 4104) |
+| Direct syscalls / unhooking | ❌ | ❌ | ❌ |
+| Task Manager dump (RDP) | ⚠️ Partial | ❌ | ⚠️ (taskmgr FP risk) |
+
+---
+
+## Sigma Rules Deployed
+
+| File | Version | Status |
+|------|---------|--------|
+| lsass-access-suspicious-tool.yml | v2 (patched) | ✅ Active |
+| procdump-lsass-dump.yml | v1 | ✅ Active |
+| comsvcs-minidump-lsass.yml | v1 (new) | ✅ Active |

@@ -1,0 +1,39 @@
+title: LSASS Dump via comsvcs.dll MiniDump (LOLBin Evasion)
+id: a7f3c9b2-1e4d-4f8a-b2c6-9d7e5f0a1b3c
+status: stable
+description: |
+  Detects LSASS memory dump via the comsvcs.dll MiniDump technique using rundll32.exe.
+  This is a confirmed evasion path against standard Sigma rules that exclude System32 processes.
+  Validated in INC-007 lab test on 2026-05-05 — 7 Sysmon Event 10 documents observed.
+  The original lsass-access-suspicious-tool.yml rule MISSED this because rundll32.exe
+  lives in C:\Windows\System32\ which was in the exclusion filter.
+references:
+    - https://attack.mitre.org/techniques/T1003/001/
+    - https://lolbas-project.github.io/lolbas/Libraries/comsvcs/
+    - https://attack.mitre.org/techniques/T1218/011/
+author: KuRo (vSOC-Lab)
+date: 2026/05/05
+logsource:
+    product: windows
+    category: process_creation
+detection:
+    selection_rundll32:
+        Image|endswith:
+            - '\rundll32.exe'
+    selection_comsvcs:
+        CommandLine|contains:
+            - 'comsvcs'
+    selection_minidump:
+        CommandLine|contains:
+            - 'MiniDump'
+            - 'minidump'
+    condition: selection_rundll32 and selection_comsvcs and selection_minidump
+falsepositives:
+    - Legitimate .NET diagnostics using comsvcs MiniDump (rare)
+    - Authorized memory diagnostics by IT staff
+level: critical
+tags:
+    - attack.credential_access
+    - attack.t1003.001
+    - attack.defense_evasion
+    - attack.t1218.011
