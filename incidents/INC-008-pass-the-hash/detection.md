@@ -66,6 +66,27 @@ A validated Sigma rule for Query 1 (Pass-the-Hash NTLM network logon) is availab
 
 ---
 
+## Network: Suricata (suricata-*)
+
+### Query 5 — SMB Flow from Attacker to Victim
+
+```kql
+src_ip: "172.16.0.11" AND dest_ip: "172.16.0.10" AND app_proto: "smb"
+```
+
+**What it shows:**
+- SMB TCP flows from Kali (`172.16.0.11`) to victim (`172.16.0.10`) on port `445`
+- Suricata tracked the full connection including data transfer
+- `flow.bytes_toserver: 2598` — likely the PsExec service binary upload to `ADMIN$`
+- `flow.bytes_toclient: 2675` — victim response
+- `flow.age: 130s` — session lasted ~2 minutes
+
+**Result:** 28 hits in the attack window (May 6, 18:20–18:45)
+
+> ⚠️ **Detection Gap:** `flow.alerted: false` on all events — Suricata logged the SMB flows but fired no alert signatures. No Suricata rule exists to flag this traffic as malicious. See `lessons-learned.md` for remediation.
+
+---
+
 ## Key Event IDs
 
 | Event ID | Source | Meaning |
@@ -78,3 +99,4 @@ A validated Sigma rule for Query 1 (Pass-the-Hash NTLM network logon) is availab
 
 - **T1550.002** — Use Alternate Authentication Material: Pass the Hash
 - **T1569.002** — System Services: Service Execution (PsExec)
+- **T1021.002** — Remote Services: SMB/Windows Admin Shares

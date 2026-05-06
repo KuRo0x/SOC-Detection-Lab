@@ -45,6 +45,32 @@ Attacker → Same Hash → Same Challenge/Response → Same Access
 | Network logon | 4624 | LogonType=3, AuthPackage=NTLM |
 | Remote service drop | 7045 | ServiceName=random |
 | Defender alert | N/A | HackTool:Win32/Psexec!mclg |
+| SMB flow to port 445 | N/A (Suricata) | src_ip=172.16.0.11, app_proto=smb |
+
+---
+
+## Detection Gap — Suricata Network Layer
+
+Suricata captured **28 SMB flow events** between the attacker (`172.16.0.11`) and victim (`172.16.0.10:445`) during the attack window, including the PsExec binary upload (`2598 bytes`). However, **`flow.alerted` was `false` on all events** — no Suricata signature fired.
+
+**Root cause:** No Suricata rule exists in the current ruleset to detect:
+- NTLM authentication over SMB
+- PsExec service binary upload patterns
+- Lateral movement via SMB Admin Shares
+
+**Recommended fix:** Enable or add the following Suricata rule categories:
+
+```
+# In /etc/suricata/suricata.yaml or rules folder
+et/open/emerging-lateral_movement.rules
+et/open/emerging-smb.rules
+```
+
+Or add a custom local rule:
+
+```
+alert tcp 172.16.0.0/24 any -> 172.16.0.0/24 445 (msg:"Possible PsExec SMB Lateral Movement"; flow:established,to_server; content:"|FF|SMB"; sid:9000001; rev:1;)
+```
 
 ---
 
@@ -53,3 +79,4 @@ Attacker → Same Hash → Same Challenge/Response → Same Access
 - `LocalAccountTokenFilterPolicy` was intentionally set to `1` for the lab — **must be reverted in production**
 - Windows Defender successfully detected `HackTool:Win32/Psexec!mclg` twice before the shell succeeded
 - The attack chain INC-007 → INC-008 demonstrates real-world credential reuse and lateral movement
+- Suricata logged the SMB flows but lacked alert rules — network-level detection gap identified and documented
