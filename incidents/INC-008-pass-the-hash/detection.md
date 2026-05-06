@@ -20,7 +20,7 @@ event.code: 4624 and winlog.event_data.LogonType: "3" and winlog.event_data.Auth
 ### Query 2 — PsExec Service Installation
 
 ```kql
-event.code: 7045
+event.code: "7045"
 ```
 
 **What it shows:**
@@ -47,11 +47,14 @@ event.code: 4648 and winlog.event_data.TargetUserName: "END-Alex"
 ### Query 4 — PsExec Service Fingerprint
 
 ```kql
-event.code: 7045 and (service.name.keyword: *UYhp* or service.name.keyword: *rsGq* or service.name.keyword: *bvsb*)
+event.code: "7045" and winlog.event_data.ServiceName: (UYhp or rsGq or bvsb)
 ```
 
 **What it shows:**
-- Event 7045 with randomized service names from PsExec attempts
+- Event 7045 with randomized service names dropped by PsExec
+- All 3 PsExec attempts captured (UAC block, Defender block x2, success)
+
+**Result:** 3 hits confirmed — matches full attack timeline
 
 ---
 
