@@ -9,7 +9,7 @@
 | **Date** | 2026-05-06 |
 | **Severity** | Critical |
 | **Status** | Closed |
-| **Attacker** | Kali Linux — 172.16.0.5 |
+| **Attacker** | Kali Linux — 172.16.0.11 |
 | **Victim** | DESKTOP-DPU3CDQ — 172.16.0.10 |
 | **Account** | END-Alex |
 | **MITRE ATT&CK** | T1550.002 — Pass the Hash |
@@ -33,7 +33,7 @@ INC-007 (Credential Dump) → NTLM Hash Stolen → INC-008 (PtH Lateral Movement
 
 | File | Description |
 |---|---|
-| `detection.md` | Kibana queries and event analysis |
+| `detection.md` | Kibana queries, Suricata queries, and event analysis |
 | `investigation.md` | Full timeline and attack reconstruction |
 | `containment.md` | Containment and remediation steps |
 | `iocs.md` | Indicators of compromise |

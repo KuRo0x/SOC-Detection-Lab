@@ -4,16 +4,17 @@
 
 | Type | Value | Notes |
 |---|---|---|
-| Attacker IP | 172.16.0.5 | Kali Linux |
+| Attacker IP | 172.16.0.11 | Kali Linux |
 | Victim IP | 172.16.0.10 | DESKTOP-DPU3CDQ |
 | Protocol | SMB (TCP 445) | Used for PsExec |
+| SMB Flow | 172.16.0.11 → 172.16.0.10:445 | 28 flows logged by Suricata, 2598 bytes toserver |
 
 ## Host IOCs
 
 | Type | Value | Notes |
 |---|---|---|
-| NTLM Hash | fc9417a516bcedc3a39a05a108eda4f6 | END-Alex — stolen in INC-007 |
-| Account | END-Alex | Domain: DESKTOP-DPU3CDQ |
+| NTLM Hash | fc9417a516bcedc3a39a05a108eda4f6 | END-Alex — stolen in INC-007 (lab/simulated) |
+| Account | END-Alex | Local admin on DESKTOP-DPU3CDQ |
 | Service Name | UYhp | PsExec service — randomized |
 | Service Name | rsGq | PsExec service — randomized |
 | Service Name | bvsb | PsExec service — randomized |
