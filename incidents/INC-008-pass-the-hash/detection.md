@@ -58,6 +58,14 @@ event.code: "7045" and winlog.event_data.ServiceName: (UYhp or rsGq or bvsb)
 
 ---
 
+## Sigma Rule
+
+A validated Sigma rule for Query 1 (Pass-the-Hash NTLM network logon) is available here:
+
+🔗 [`INC-008_t1550.002_pass-the-hash-psexec.yml`](https://github.com/KuRo0x/SOC-Detection-Lab/blob/main/detections/sigma/INC-008_t1550.002_pass-the-hash-psexec.yml)
+
+---
+
 ## Key Event IDs
 
 | Event ID | Source | Meaning |
