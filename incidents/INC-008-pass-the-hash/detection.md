@@ -32,13 +32,26 @@ event.code: 7045
 
 ---
 
-### Query 3 — NTLM General Search
+### Query 3 — Explicit Credential Use
 
 ```kql
-NTLM
+event.code: 4648 and winlog.event_data.TargetUserName: "END-Alex"
 ```
 
-**Result:** 43 documents — confirms NTLM authentication activity
+**What it shows:**
+- Event 4648 = Explicit credentials provided for a logon
+- Perfect PtH fingerprint when combined with LogonType 3 NTLM
+
+---
+
+### Query 4 — PsExec Service Fingerprint
+
+```kql
+event.code: 7045 and (service.name.keyword: *UYhp* or service.name.keyword: *rsGq* or service.name.keyword: *bvsb*)
+```
+
+**What it shows:**
+- Event 7045 with randomized service names from PsExec attempts
 
 ---
 
