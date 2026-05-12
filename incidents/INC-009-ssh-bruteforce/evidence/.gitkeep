@@ -1,0 +1,7 @@
+# Evidence folder — place screenshots here
+#
+# Expected files:
+# - kibana-discover-failed-password-spike.png
+# - kibana-discover-accepted-password.png
+# - kibana-alerts-ssh-failed.png
+# - attacker-hydra-output.png
