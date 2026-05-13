@@ -5,7 +5,7 @@
 | Type | Value | Notes |
 |------|-------|-------|
 | Attacker IP | `172.16.0.11` | Kali Linux attacker VM |
-| Victim IP | `172.16.0.x` | ubuntu-victim |
+| Victim IP | `172.16.0.20` | ubuntu-victim |
 | Protocol | SSH (TCP 22) | Used for brute-force |
 | SSH Flow | `172.16.0.11 → ubuntu-victim:22` | Repeated failed auth attempts |
 | Source port range | ephemeral (e.g. 45440, 52294) | Cycling ports per SSH attempt |
