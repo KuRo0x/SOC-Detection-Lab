@@ -25,7 +25,7 @@ This lab simulates a real Security Operations Center (SOC) environment running e
   [ VMnet3 — 172.16.0.0/24 — Isolated Lab Network ]
       |              |                |               |
   soc-brn-ubn   DESKTOP-DPU3CDQ   ubuntu-victim    kali
-  172.16.0.4    172.16.0.10       172.16.0.x       172.16.0.11
+  172.16.0.4    172.16.0.10       172.16.0.20      172.16.0.11
   (SIEM/IDS)    (Windows Victim)  (Linux Victim)   (Attacker)
 ```
 
@@ -38,7 +38,7 @@ This lab simulates a real Security Operations Center (SOC) environment running e
 | `pfsense` | FreeBSD (pfSense 2.x) | 172.16.0.1 | 480 MB | Firewall · Gateway · Suricata IDS |
 | `soc-brn-ubn` | Ubuntu 24.04.3 LTS | 172.16.0.4 | 3.8 GB | SIEM · ELK Stack · IDS |
 | `DESKTOP-DPU3CDQ` | Windows 10 x64 | 172.16.0.10 | 2 GB | Windows Victim · Sysmon · Winlogbeat |
-| `ubuntu-victim` | Ubuntu Linux | 172.16.0.x | — | Linux Victim · Filebeat · SSH target |
+| `ubuntu-victim` | Ubuntu Linux | 172.16.0.20 | — | Linux Victim · Filebeat · SSH target |
 | `kali` | Kali Linux (rolling) | 172.16.0.11 | 3.8 GB | Attacker · Adversary Emulation |
 
 > `ubuntu-victim` was added during [INC-009 — SSH Brute Force](./incidents/INC-009-ssh-bruteforce/). It serves as the Linux endpoint target, shipping `/var/log/auth.log` to Elasticsearch via Filebeat 8.19.15.
