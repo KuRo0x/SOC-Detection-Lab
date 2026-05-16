@@ -4,7 +4,13 @@ This folder contains the network topology diagram for the KuRo SOC Detection Lab
 
 ---
 
-## Network Topology
+## Network Topology Diagram
+
+![KuRo SOC Detection Lab — Network Topology](../network-topology.png)
+
+---
+
+## Topology Overview
 
 ```
 [ Internet ]
@@ -19,12 +25,6 @@ This folder contains the network topology diagram for the KuRo SOC Detection Lab
   172.16.0.4    172.16.0.10       172.16.0.20      172.16.0.11
   (SIEM/IDS)    (Windows Victim)  (Linux Victim)   (Attacker)
 ```
-
----
-
-## Diagram File
-
-> `architecture-diagram.png` — place the exported network diagram image in this folder.
 
 ---
 
