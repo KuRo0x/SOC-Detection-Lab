@@ -11,7 +11,7 @@ All virtual machines running in VMware Workstation on the same host. Internal la
 | pfsense | FreeBSD (pfSense 2.x) | 172.16.0.1 (LAN) | 480 MB | 1 vCPU | 15 GB | Firewall / Gateway |
 | soc-brn-ubn | Ubuntu 24.04.3 LTS | 172.16.0.4 | 3.8 GB | 2 vCPU | 28.37 GB | SIEM / IDS |
 | DESKTOP-DPU3CDQ | Windows 10 x64 | 172.16.0.10 | 2 GB | 2 vCPU | — | Windows Victim Endpoint |
-| ubuntu-victim | Ubuntu Linux | 172.16.0.20 | — | — | — | Linux Victim Endpoint |
+| ubuntu-victim | Ubuntu Linux | 172.16.0.20 | 3.8 GB | 2 vCPU | 28.37 GB | Linux Victim Endpoint |
 | kali | Kali Linux (rolling) | 172.16.0.11 | 3.8 GB | 2 vCPU | — | Attacker |
 
 > `ubuntu-victim` was added during **INC-009 — SSH Brute Force** to serve as a dedicated Linux target host. It ships `/var/log/auth.log` to Elasticsearch via Filebeat 8.19.15.
