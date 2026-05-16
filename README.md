@@ -5,6 +5,14 @@
 
 ---
 
+## Network Topology
+
+![KuRo SOC Detection Lab — Network Topology](./network-topology.png)
+
+> Full diagram details: [`architecture/README.md`](./architecture/README.md)
+
+---
+
 ## Lab Overview
 
 This lab simulates a real Security Operations Center (SOC) environment running entirely inside VMware Workstation. It is designed for detection engineering, incident response practice, and blue team portfolio building.
@@ -13,46 +21,28 @@ This lab simulates a real Security Operations Center (SOC) environment running e
 
 ---
 
-## Lab Architecture
-
-```
-[ Internet ]
-      |
-   [ NAT ]
-      |
-  [ pfSense ]  172.16.0.1  — Firewall / Gateway / Suricata IDS
-      |
-  [ VMnet3 — 172.16.0.0/24 — Isolated Lab Network ]
-      |              |                |               |
-  soc-brn-ubn   DESKTOP-DPU3CDQ   ubuntu-victim    kali
-  172.16.0.4    172.16.0.10       172.16.0.20      172.16.0.11
-  (SIEM/IDS)    (Windows Victim)  (Linux Victim)   (Attacker)
-```
-
----
-
 ## VM Inventory
 
 | Hostname | OS | IP | RAM | Role |
 |---|---|---|---|---|
 | `pfsense` | FreeBSD (pfSense 2.x) | 172.16.0.1 | 480 MB | Firewall · Gateway · Suricata IDS |
-| `soc-brn-ubn` | Ubuntu 24.04.3 LTS | 172.16.0.4 | 3.8 GB | SIEM · ELK Stack · IDS |
+| `soc-brn-ubn` | Ubuntu 24.04.3 LTS | 172.16.0.4 | 3.8 GB | SIEM · ELK Stack · Kibana · Suricata |
 | `DESKTOP-DPU3CDQ` | Windows 10 x64 | 172.16.0.10 | 2 GB | Windows Victim · Sysmon · Winlogbeat |
-| `ubuntu-victim` | Ubuntu Linux | 172.16.0.20 | — | Linux Victim · Filebeat · SSH target |
+| `ubuntu-victim` | Ubuntu Linux | 172.16.0.20 | — | Linux Victim · Filebeat 8.19.15 · SSH target |
 | `kali` | Kali Linux (rolling) | 172.16.0.11 | 3.8 GB | Attacker · Adversary Emulation |
 
-> `ubuntu-victim` was added during [INC-009 — SSH Brute Force](./incidents/INC-009-ssh-bruteforce/). It serves as the Linux endpoint target, shipping `/var/log/auth.log` to Elasticsearch via Filebeat 8.19.15.
+> `ubuntu-victim` was added during [INC-009 — SSH Brute Force](./incidents/INC-009-ssh-bruteforce/). It ships `/var/log/auth.log` to Elasticsearch via Filebeat 8.19.15.
 
 ---
 
 ## Telemetry Pipeline
 
-| Source | Agent | Index |
-|---|---|---|
-| Windows Event Logs (Sysmon) | Winlogbeat | `winlogbeat-*` |
-| Linux Auth Logs | Filebeat | `filebeat-*` |
-| Network IDS | Suricata → Filebeat | `suricata-*` |
-| pfSense Firewall Logs | Filebeat | `pfsense-*` |
+| Source | Agent | Destination | Index |
+|---|---|---|---|
+| Windows Event Logs + Sysmon | Winlogbeat 8.19.15 | Logstash TCP 5044 | `winlogbeat-*` |
+| Linux Auth Logs (`/var/log/auth.log`) | Filebeat 8.19.15 | Logstash TCP 5044 | `filebeat-*` |
+| Network IDS Alerts | Suricata → Filebeat | Elasticsearch | `suricata-*` |
+| pfSense Firewall Logs | Syslog UDP 5140 + Suricata EVE JSON | Logstash | `pfsense-*` |
 
 ---
 
@@ -72,29 +62,6 @@ This lab simulates a real Security Operations Center (SOC) environment running e
 
 ---
 
-## Repository Structure
-
-```
-SOC-Detection-Lab/
-├── architecture/           — Lab diagrams and topology docs
-├── lab/
-│   ├── infrastructure/     — Per-VM setup, IP inventory, host details
-│   ├── telemetry-pipeline/ — Filebeat, Winlogbeat, Logstash configs
-│   └── architecture/       — Network diagrams
-├── incidents/              — Incident cases (INC-001 → INC-009)
-├── detections/             — Elastic Security rules and Sigma rules
-├── detection-engineering/  — Rule design, validation, and upgrade paths
-├── adversary-emulation/    — Attack simulation scripts and playbooks
-├── evidence/               — Screenshots and artifacts
-├── exports/                — Exported Kibana dashboards and rules
-├── threat-intelligence/    — IOC lists and TI feeds
-├── automation/             — Helper scripts
-├── metrics/                — Lab performance and coverage metrics
-└── docs/                   — General documentation
-```
-
----
-
 ## MITRE ATT&CK Coverage
 
 | Tactic | Techniques Covered |
@@ -106,6 +73,29 @@ SOC-Detection-Lab/
 | Credential Access | T1110 — Brute Force · T1003 — Credential Dumping |
 | Discovery | T1046 — Network Scan |
 | Lateral Movement | T1550.002 — Pass-the-Hash |
+
+---
+
+## Repository Structure
+
+```
+SOC-Detection-Lab/
+├── network-topology.png    — Lab network diagram (v2)
+├── architecture/           — Topology docs and data flow tables
+├── lab/
+│   ├── infrastructure/     — Per-VM setup and IP inventory
+│   └── telemetry-pipeline/ — Filebeat, Winlogbeat, Logstash configs
+├── incidents/              — Incident cases (INC-001 → INC-009)
+├── detections/             — Elastic Security rules and Sigma rules
+├── detection-engineering/  — Rule design, validation, and upgrade paths
+├── adversary-emulation/    — Attack simulation scripts and playbooks
+├── evidence/               — Screenshots and artifacts per incident
+├── exports/                — Exported Kibana dashboards and rules
+├── threat-intelligence/    — IOC lists and TI feeds
+├── automation/             — Helper scripts
+├── metrics/                — Lab performance and coverage metrics
+└── docs/                   — General documentation
+```
 
 ---
 
