@@ -1,52 +1,31 @@
 # Evidence
 
-Real screenshots captured from the running lab — every detection validated against live telemetry.
-Images are currently linked from the legacy repo and will be replaced with local copies.
+This folder is the top-level evidence store for the KuRo SOC Detection Lab.  
+Each incident has its own `evidence/` subfolder inside `incidents/INC-XXX-<name>/evidence/`.
 
 ---
 
-## Endpoint
+## Evidence Standards
 
-| File | Description |
+| Type | Format | Naming |
+|---|---|---|
+| Kibana screenshots | `.png` | `kibana-<view>-<date>.png` |
+| Terminal output | `.png` or `.txt` | `terminal-<tool>-<date>.png` |
+| Log exports | `.json` or `.log` | `<source>-export-<date>.log` |
+| Packet captures | `.pcap` | `<attack>-<date>.pcap` |
+
+---
+
+## Per-Incident Evidence Location
+
+| Incident | Evidence Folder |
 |---|---|
-| `endpoint/powershell-encoded-command.png` | PowerShell encoded command detected in Kibana (Sysmon EID 1) |
-| `endpoint/sysmon-operational-events.png` | Sysmon operational events visible in Windows Event Viewer |
-
----
-
-## SIEM
-
-| File | Description |
-|---|---|
-| `siem/kibana-alert-fired.png` | Kibana showing a real alert fired against live telemetry |
-| `siem/logstash-running.png` | Logstash service active and ingesting logs |
-
----
-
-## Network
-
-| File | Description |
-|---|---|
-| `network/01_pfsense_dns_policy.png` | pfSense DNS enforcement policy configuration |
-| `network/02_firewall_dns_blocks.png` | Firewall log showing DNS bypass attempts blocked |
-
----
-
-## IDS
-
-| File | Description |
-|---|---|
-| `ids/eve-json-sample.png` | Suricata eve.json structured alert output |
-| `ids/suricata-status.png` | Suricata service status confirming active monitoring |
-
----
-
-## MITRE ATT&CK
-
-| File | Description |
-|---|---|
-| `mitre/attack-mapping.png` | ATT&CK Navigator coverage map for this lab |
-
----
-
-> **Note:** To replace placeholder URLs — download each image from the links in the README and upload to the matching path above.
+| INC-001 | [`incidents/INC-001-phishing/evidence/`](../incidents/INC-001-phishing/) |
+| INC-002 | [`incidents/INC-002-powershell/evidence/`](../incidents/INC-002-powershell/) |
+| INC-003 | [`incidents/INC-003-persistence/evidence/`](../incidents/INC-003-persistence/) |
+| INC-004 | [`incidents/INC-004-smb-bruteforce/evidence/`](../incidents/INC-004-smb-bruteforce/) |
+| INC-005 | [`incidents/INC-005-nmap-recon/evidence/`](../incidents/INC-005-nmap-recon/) |
+| INC-006 | [`incidents/INC-006-scheduled-task-privesc/evidence/`](../incidents/INC-006-scheduled-task-privesc/) |
+| INC-007 | [`incidents/INC-007-credential-dumping/evidence/`](../incidents/INC-007-credential-dumping/) |
+| INC-008 | [`incidents/INC-008-pass-the-hash/evidence/`](../incidents/INC-008-pass-the-hash/) |
+| INC-009 | [`incidents/INC-009-ssh-bruteforce/evidence/`](../incidents/INC-009-ssh-bruteforce/) |

@@ -1,50 +1,16 @@
-# Sigma Rules
+# Sigma — Detection Engineering Drafts
 
-Detection rules written in standard Sigma format, organized by MITRE ATT&CK tactic.
-All rules are portable to any Sigma-compatible SIEM backend.
-
----
-
-## Structure
-
-```
-sigma/
-├── execution/        ← Execution-based detections
-├── persistence/      ← Persistence-based detections
-└── high-fidelity/    ← Validated, low false-positive rules
-```
+This folder is the **working area** for Sigma rule development.  
+Finalized and validated rules are promoted to [`detections/sigma/`](../../detections/sigma/).
 
 ---
 
-## Rule Index
+## Workflow
 
-### execution/
+1. Draft rule here during incident investigation
+2. Validate the rule logic against real lab data in Kibana
+3. Test for false positives in a clean environment
+4. Move to `detections/sigma/` once validated
+5. Reference from the incident's `detection.md`
 
-| Rule | MITRE | Level |
-|---|---|---|
-| `powershell_encoded_command_medium.yml` | T1059.001 | Medium |
-| `office_powershell_download.yml` | T1059.001, T1204.002 | High |
-
-### persistence/
-
-| Rule | MITRE | Level |
-|---|---|---|
-| `sc_service_create_medium.yml` | T1543.003 | Medium |
-| `schtasks_create_medium.yml` | T1053.005 | Medium |
-
-### high-fidelity/
-
-| Rule | MITRE | Level |
-|---|---|---|
-| `powershell_encoded_command.yml` | T1059.001 | High |
-| `sc_service_create_suspicious_high.yml` | T1543.003 | High |
-| `schtasks_create_suspicious_high.yml` | T1053.005 | High |
-| `script_host_to_powershell_stealth_high.yml` | T1059.001 | High |
-
----
-
-## Notes
-
-- All rules are `status: experimental`
-- Rules are authored by KuRo and validated against live lab telemetry
-- False positive filters are included where applicable
+> See [`detections/sigma/README.md`](../../detections/sigma/README.md) for validated rules.
